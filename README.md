@@ -4,6 +4,10 @@ simple lightweight desktop app for trimming MP4 files
 
 ![clipper](img/clipper_long.png)
 
+## preview
+
+![example](img/example.png)
+
 ## shortcuts
 
 | Action | Shortcut |
