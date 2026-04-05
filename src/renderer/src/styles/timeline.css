@@ -1,0 +1,129 @@
+/* === Timeline — compact, dark === */
+.timeline {
+  height: 100px;
+  background: var(--bg-sunken);
+  position: relative;
+  user-select: none;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.timeline-canvas {
+  width: 100%;
+  height: 78px;
+  display: block;
+  cursor: pointer;
+}
+
+.timeline-timecodes {
+  height: 22px;
+  position: relative;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-sm);
+  overflow: hidden;
+}
+
+.timeline-timecode {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* Playhead — clean blue line */
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 78px;
+  background: var(--playhead-color);
+  box-shadow: 0 0 3px rgba(91, 159, 214, 0.4);
+  pointer-events: none;
+  z-index: 10;
+  will-change: left;
+}
+
+.timeline-playhead::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -4px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--playhead-color);
+}
+
+/* Trim handles — warm amber */
+.trim-handle {
+  position: absolute;
+  top: 0;
+  width: 12px;
+  height: 78px;
+  background: var(--accent-warm);
+  cursor: ew-resize;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  transition: background var(--transition-fast);
+}
+
+.trim-handle:hover,
+.trim-handle.dragging {
+  background: var(--accent-warm-hover);
+}
+
+.trim-handle-grip {
+  width: 4px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 1px;
+}
+
+.trim-handle.start {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.trim-handle.end {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.trim-tooltip {
+  position: absolute;
+  top: -24px;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-warm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 30;
+}
+
+.timeline-zoom-badge {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--accent);
+  background: rgba(30, 30, 30, 0.9);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  z-index: 15;
+  pointer-events: none;
+}
