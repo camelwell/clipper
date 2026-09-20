@@ -1,8 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { useUIStore } from '../stores/uiStore'
-import { useVideoStore } from '../stores/videoStore'
-import { useTrimStore } from '../stores/trimStore'
-import { usePlaybackStore } from '../stores/playbackStore'
+import { openVideo } from '../utils/openVideo'
 import '../styles/drop-zone.css'
 
 export default function DropZone(): JSX.Element | null {
@@ -11,30 +9,19 @@ export default function DropZone(): JSX.Element | null {
   const addToast = useUIStore((s) => s.addToast)
   const dragCounter = useRef(0)
 
-  const handleFile = useCallback(async (filePath: string) => {
-    if (!filePath.toLowerCase().endsWith('.mp4')) {
-      addToast('Only MP4 files are supported', 'error')
-      return
-    }
-    try {
-      await useVideoStore.getState().loadVideo(filePath)
-      useTrimStore.getState().resetTrim(useVideoStore.getState().duration)
-      usePlaybackStore.getState().setCurrentTime(0)
-      usePlaybackStore.getState().setIsPlaying(false)
-    } catch {
-      addToast('Failed to load video', 'error')
-    }
-  }, [addToast])
-
   useEffect(() => {
+    const hasFiles = (e: DragEvent): boolean => e.dataTransfer?.types.includes('Files') ?? false
+
     const handleDragEnter = (e: DragEvent): void => {
       e.preventDefault()
+      if (!hasFiles(e)) return
       dragCounter.current++
       if (dragCounter.current === 1) setActive(true)
     }
 
     const handleDragLeave = (e: DragEvent): void => {
       e.preventDefault()
+      if (!hasFiles(e)) return
       dragCounter.current--
       if (dragCounter.current === 0) setActive(false)
     }
@@ -49,10 +36,14 @@ export default function DropZone(): JSX.Element | null {
       setActive(false)
 
       const file = e.dataTransfer?.files[0]
-      if (file) {
-        // Electron provides file.path
-        handleFile((file as File & { path: string }).path)
+      if (!file) return
+      // File.path is gone in Electron 32+; resolve the path through the preload
+      const filePath = window.clipperAPI.getPathForFile(file)
+      if (!filePath) {
+        addToast('Could not read the dropped file', 'error')
+        return
       }
+      openVideo(filePath)
     }
 
     document.addEventListener('dragenter', handleDragEnter)
@@ -66,7 +57,7 @@ export default function DropZone(): JSX.Element | null {
       document.removeEventListener('dragover', handleDragOver)
       document.removeEventListener('drop', handleDrop)
     }
-  }, [setActive, handleFile])
+  }, [setActive, addToast])
 
   if (!isActive) return null
 

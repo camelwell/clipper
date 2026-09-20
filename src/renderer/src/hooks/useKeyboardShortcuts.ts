@@ -4,19 +4,9 @@ import { usePlaybackStore } from '../stores/playbackStore'
 import { useTrimStore } from '../stores/trimStore'
 import { useFileNavStore } from '../stores/fileNavStore'
 import { useUIStore } from '../stores/uiStore'
+import { seekTo, seekBy, getCurrentTime } from '../utils/videoElement'
+import { openVideoDialog, closeVideo } from '../utils/openVideo'
 import { clamp } from '../utils/clamp'
-
-function getVideo(): HTMLVideoElement | null {
-  return (window as unknown as { __clipperVideo: HTMLVideoElement | null }).__clipperVideo ?? null
-}
-
-function seekTo(time: number): void {
-  const video = getVideo()
-  if (video) {
-    video.currentTime = time
-    usePlaybackStore.getState().setCurrentTime(time)
-  }
-}
 
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
@@ -25,7 +15,7 @@ export function useKeyboardShortcuts(): void {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 
       const { duration, fps, filePath } = useVideoStore.getState()
-      const { currentTime, isPlaying, volume } = usePlaybackStore.getState()
+      const { isPlaying, volume } = usePlaybackStore.getState()
       const { trimStart, trimEnd } = useTrimStore.getState()
 
       switch (true) {
@@ -42,7 +32,7 @@ export function useKeyboardShortcuts(): void {
           e.preventDefault()
           if (!filePath) return
           if (isPlaying) usePlaybackStore.getState().setIsPlaying(false)
-          seekTo(clamp(currentTime + 1 / fps, 0, duration))
+          seekBy(1 / fps, duration)
           break
         }
 
@@ -51,7 +41,7 @@ export function useKeyboardShortcuts(): void {
           e.preventDefault()
           if (!filePath) return
           if (isPlaying) usePlaybackStore.getState().setIsPlaying(false)
-          seekTo(clamp(currentTime - 1 / fps, 0, duration))
+          seekBy(-1 / fps, duration)
           break
         }
 
@@ -59,7 +49,7 @@ export function useKeyboardShortcuts(): void {
         case e.key === 'ArrowRight' && !e.ctrlKey && !e.altKey && !e.shiftKey: {
           e.preventDefault()
           if (!filePath) return
-          seekTo(clamp(currentTime + 5, 0, duration))
+          seekBy(5, duration)
           break
         }
 
@@ -67,7 +57,7 @@ export function useKeyboardShortcuts(): void {
         case e.key === 'ArrowLeft' && !e.ctrlKey && !e.altKey && !e.shiftKey: {
           e.preventDefault()
           if (!filePath) return
-          seekTo(clamp(currentTime - 5, 0, duration))
+          seekBy(-5, duration)
           break
         }
 
@@ -75,7 +65,7 @@ export function useKeyboardShortcuts(): void {
         case e.key === 'ArrowRight' && e.shiftKey && !e.ctrlKey: {
           e.preventDefault()
           if (!filePath) return
-          seekTo(clamp(currentTime + 1, 0, duration))
+          seekBy(1, duration)
           break
         }
 
@@ -83,7 +73,7 @@ export function useKeyboardShortcuts(): void {
         case e.key === 'ArrowLeft' && e.shiftKey && !e.ctrlKey: {
           e.preventDefault()
           if (!filePath) return
-          seekTo(clamp(currentTime - 1, 0, duration))
+          seekBy(-1, duration)
           break
         }
 
@@ -105,7 +95,7 @@ export function useKeyboardShortcuts(): void {
         case e.key === 'i' && !e.ctrlKey && !e.altKey: {
           e.preventDefault()
           if (!filePath) return
-          useTrimStore.getState().setTrimStart(Math.min(currentTime, trimEnd - 0.1))
+          useTrimStore.getState().setTrimStart(Math.min(getCurrentTime(), trimEnd - 0.1))
           break
         }
 
@@ -113,7 +103,7 @@ export function useKeyboardShortcuts(): void {
         case e.key === 'o' && !e.ctrlKey && !e.altKey: {
           e.preventDefault()
           if (!filePath) return
-          useTrimStore.getState().setTrimEnd(Math.max(currentTime, trimStart + 0.1))
+          useTrimStore.getState().setTrimEnd(Math.max(getCurrentTime(), trimStart + 0.1))
           break
         }
 
@@ -141,14 +131,7 @@ export function useKeyboardShortcuts(): void {
         // Open file
         case e.key === 'o' && e.ctrlKey: {
           e.preventDefault()
-          window.clipperAPI.openFileDialog().then(async (path) => {
-            if (path) {
-              await useVideoStore.getState().loadVideo(path)
-              useTrimStore.getState().resetTrim(useVideoStore.getState().duration)
-              usePlaybackStore.getState().setCurrentTime(0)
-              usePlaybackStore.getState().setIsPlaying(false)
-            }
-          })
+          openVideoDialog()
           break
         }
 
@@ -169,10 +152,7 @@ export function useKeyboardShortcuts(): void {
         // Close file
         case e.key === 'w' && e.ctrlKey: {
           e.preventDefault()
-          useVideoStore.getState().clearVideo()
-          useTrimStore.getState().resetTrim(0)
-          usePlaybackStore.getState().setCurrentTime(0)
-          usePlaybackStore.getState().setIsPlaying(false)
+          closeVideo()
           break
         }
 

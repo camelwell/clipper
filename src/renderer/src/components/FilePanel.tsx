@@ -1,9 +1,6 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { useFileNavStore } from '../stores/fileNavStore'
-import { useVideoStore } from '../stores/videoStore'
-import { useTrimStore } from '../stores/trimStore'
-import { usePlaybackStore } from '../stores/playbackStore'
-import { useUIStore } from '../stores/uiStore'
+import { openVideo, openVideoDialog } from '../utils/openVideo'
 import { formatFileSize } from '../utils/formatTime'
 import FolderIcon from '../assets/folder.svg'
 import FileIcon from '../assets/file.svg'
@@ -20,7 +17,6 @@ export default function FilePanel(): JSX.Element {
   const loadRecentFiles = useFileNavStore((s) => s.loadRecentFiles)
   const removeRecentFile = useFileNavStore((s) => s.removeRecentFile)
   const clearRecentFiles = useFileNavStore((s) => s.clearRecentFiles)
-  const addToast = useUIStore((s) => s.addToast)
 
   useEffect(() => {
     loadRecentFiles()
@@ -29,23 +25,6 @@ export default function FilePanel(): JSX.Element {
       else window.clipperAPI.getHomeDirectory().then((home) => loadDirectory(home))
     })
   }, [loadDirectory, loadRecentFiles])
-
-  const openFile = useCallback(async (filePath: string) => {
-    try {
-      await useVideoStore.getState().loadVideo(filePath)
-      useTrimStore.getState().resetTrim(useVideoStore.getState().duration)
-      usePlaybackStore.getState().setCurrentTime(0)
-      usePlaybackStore.getState().setIsPlaying(false)
-      loadRecentFiles()
-    } catch {
-      addToast('Failed to load video', 'error')
-    }
-  }, [addToast, loadRecentFiles])
-
-  const handleOpenDialog = async (): Promise<void> => {
-    const filePath = await window.clipperAPI.openFileDialog()
-    if (filePath) openFile(filePath)
-  }
 
   const navigateUp = (): void => {
     const parent = currentDirectory.replace(/[\\/][^\\/]+$/, '')
@@ -79,7 +58,7 @@ export default function FilePanel(): JSX.Element {
       </div>
 
       <div className="file-panel-content">
-        <button className="file-panel-open-btn" onClick={handleOpenDialog}>
+        <button className="file-panel-open-btn" onClick={openVideoDialog}>
           + Open File
         </button>
 
@@ -90,7 +69,7 @@ export default function FilePanel(): JSX.Element {
             ) : (
               <>
                 {recentFiles.map((file) => (
-                  <div key={file.filePath} className="recent-file-item" onDoubleClick={() => openFile(file.filePath)}>
+                  <div key={file.filePath} className="recent-file-item" onDoubleClick={() => openVideo(file.filePath)}>
                     <div className="recent-file-thumb">
                       {file.thumbnail ? (
                         <img src={file.thumbnail} alt="" />
@@ -149,7 +128,7 @@ export default function FilePanel(): JSX.Element {
                   key={entry.path}
                   className={`dir-entry ${entry.isDirectory ? 'is-folder' : 'is-file'}`}
                   onClick={() => entry.isDirectory ? loadDirectory(entry.path) : undefined}
-                  onDoubleClick={() => !entry.isDirectory ? openFile(entry.path) : undefined}
+                  onDoubleClick={() => !entry.isDirectory ? openVideo(entry.path) : undefined}
                 >
                   <span className="dir-entry-icon">
                     <img src={entry.isDirectory ? FolderIcon : FileIcon} alt="" className="icon" />

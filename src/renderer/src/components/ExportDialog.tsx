@@ -167,7 +167,7 @@ export default function ExportDialog(): JSX.Element | null {
             disabled={isExporting}
           />
           <span className="export-checkbox-label">Fast Export (Stream Copy)</span>
-          <span className="export-checkbox-hint">Keyframe-aligned</span>
+          <span className="export-checkbox-hint">Starts at the previous keyframe</span>
         </label>
 
         {isExporting && (

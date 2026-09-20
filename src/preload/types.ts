@@ -51,10 +51,16 @@ export interface ClipperAPI {
   // File system
   readDirectory: (dirPath: string) => Promise<DirectoryEntry[]>
   getHomeDirectory: () => Promise<string>
+  getPathForFile: (file: File) => string
 
   // FFmpeg
   probeVideo: (filePath: string) => Promise<VideoMetadata>
-  generateThumbnails: (filePath: string, count: number, height: number) => Promise<string[]>
+  generateThumbnails: (
+    filePath: string,
+    duration: number,
+    count: number,
+    height: number
+  ) => Promise<string[]>
   exportTrimmed: (options: ExportOptions) => Promise<void>
   cancelExport: () => Promise<void>
 

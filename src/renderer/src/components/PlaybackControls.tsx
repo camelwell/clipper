@@ -1,7 +1,10 @@
+import { useRef, useCallback } from 'react'
 import { useVideoStore } from '../stores/videoStore'
 import { usePlaybackStore } from '../stores/playbackStore'
 import { useTrimStore } from '../stores/trimStore'
 import { useUIStore } from '../stores/uiStore'
+import { useSmoothTime } from '../hooks/useSmoothTime'
+import { seekBy } from '../utils/videoElement'
 import { formatTime } from '../utils/formatTime'
 import BackIcon from '../assets/back.svg'
 import ForwardIcon from '../assets/forward.svg'
@@ -20,10 +23,10 @@ function VolumeIcon({ volume, isMuted }: { volume: number; isMuted: boolean }): 
 }
 
 export default function PlaybackControls(): JSX.Element {
+  const timeRef = useRef<HTMLSpanElement>(null)
   const duration = useVideoStore((s) => s.duration)
   const fps = useVideoStore((s) => s.fps)
   const filePath = useVideoStore((s) => s.filePath)
-  const currentTime = usePlaybackStore((s) => s.currentTime)
   const isPlaying = usePlaybackStore((s) => s.isPlaying)
   const togglePlay = usePlaybackStore((s) => s.togglePlay)
   const volume = usePlaybackStore((s) => s.volume)
@@ -36,18 +39,15 @@ export default function PlaybackControls(): JSX.Element {
 
   const trimmedDuration = trimEnd - trimStart
 
-  const seekVideo = (time: number): void => {
-    const video = (window as unknown as { __clipperVideo: HTMLVideoElement | null }).__clipperVideo
-    if (video) {
-      video.currentTime = time
-      usePlaybackStore.getState().setCurrentTime(time)
-    }
-  }
+  // Time readout is written straight to the DOM so playback doesn't re-render the toolbar
+  const updateReadout = useCallback((time: number) => {
+    if (timeRef.current) timeRef.current.textContent = formatTime(time)
+  }, [])
+  useSmoothTime(updateReadout)
 
   const stepFrame = (dir: 1 | -1): void => {
-    const frameDuration = 1 / fps
-    const newTime = Math.max(0, Math.min(duration, currentTime + dir * frameDuration))
-    seekVideo(newTime)
+    usePlaybackStore.getState().setIsPlaying(false)
+    seekBy(dir / fps, duration)
   }
 
   if (!filePath) return <div className="playback-controls" />
@@ -64,7 +64,8 @@ export default function PlaybackControls(): JSX.Element {
         <img src={ForwardIcon} alt="" className="icon" />
       </button>
 
-      <span className="playback-time">{formatTime(currentTime)}</span>
+      {/* Populated by useSmoothTime; left empty here so React never reconciles its text */}
+      <span ref={timeRef} className="playback-time" />
       <span className="playback-separator">/</span>
       <span className="playback-time" style={{ opacity: 0.5 }}>{formatTime(duration)}</span>
 

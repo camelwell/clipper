@@ -1,7 +1,7 @@
 import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import path from 'path'
 import fs from 'fs'
-import { probeVideo, generateThumbnails, generateSingleThumbnail, exportTrimmed, cancelExport } from './ffmpeg'
+import { probeVideo, generateThumbnails, exportTrimmed, cancelExport } from './ffmpeg'
 import * as history from './file-history'
 import type { ExportOptions, DirectoryEntry } from '../preload/types'
 import os from 'os'
@@ -96,13 +96,12 @@ export function registerIpcHandlers(): void {
     return probeVideo(filePath)
   })
 
-  ipcMain.handle('ffmpeg:thumbnails', async (_event, filePath: string, count: number, height: number) => {
-    return generateThumbnails(filePath, count, height)
-  })
-
-  ipcMain.handle('ffmpeg:single-thumbnail', async (_event, filePath: string) => {
-    return generateSingleThumbnail(filePath)
-  })
+  ipcMain.handle(
+    'ffmpeg:thumbnails',
+    async (_event, filePath: string, duration: number, count: number, height: number) => {
+      return generateThumbnails(filePath, duration, count, height)
+    }
+  )
 
   ipcMain.handle('ffmpeg:export', async (event, options: ExportOptions) => {
     const win = BrowserWindow.fromWebContents(event.sender)

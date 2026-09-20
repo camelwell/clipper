@@ -13,6 +13,12 @@
   height: 78px;
   display: block;
   cursor: pointer;
+  touch-action: none;
+}
+
+.timeline.dragging,
+.timeline.dragging .timeline-canvas {
+  cursor: ew-resize;
 }
 
 .timeline-timecodes {
@@ -35,17 +41,19 @@
   white-space: nowrap;
 }
 
-/* Playhead — clean blue line */
+/* Playhead — clean blue line. Moved with transform (set from JS every frame
+   during playback) so it never triggers layout. */
 .timeline-playhead {
   position: absolute;
   top: 0;
+  left: 0;
   width: 2px;
   height: 78px;
   background: var(--playhead-color);
   box-shadow: 0 0 3px rgba(91, 159, 214, 0.4);
   pointer-events: none;
   z-index: 10;
-  will-change: left;
+  will-change: transform;
 }
 
 .timeline-playhead::before {
@@ -97,9 +105,11 @@
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
+/* Sits just inside the strip: the timeline clips overflow, so anything
+   above it would never be seen */
 .trim-tooltip {
   position: absolute;
-  top: -24px;
+  top: 4px;
   transform: translateX(-50%);
   font-family: var(--font-mono);
   font-size: 10px;

@@ -5,16 +5,28 @@ directories:
   output: dist
 files:
   - '!**/.vscode/*'
+  - '!.claude/**'
   - '!src/*'
+  - '!img/**'
+  - '!README.md'
+  - '!out/**/*.tsbuildinfo'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc,.gitignore}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+# The app has no runtime node_modules: ffmpeg is shipped as a bare binary in
+# resources/ (read via process.resourcesPath) rather than through the
+# ffmpeg-static package and its download-time dependency tree.
 extraResources:
   - from: build/icon.png
     to: icon.png
-asarUnpack:
-  - node_modules/ffmpeg-static/**
-  - node_modules/ffprobe-static/**
+  - from: node_modules/ffmpeg-static/ffmpeg.exe
+    to: ffmpeg.exe
+  - from: node_modules/ffmpeg-static/ffmpeg.exe.LICENSE
+    to: ffmpeg.exe.LICENSE
+# Ship only the English locale pack (each unused one is ~0.7 MB)
+electronLanguages:
+  - en-US
+compression: maximum
 win:
   target:
     - target: nsis

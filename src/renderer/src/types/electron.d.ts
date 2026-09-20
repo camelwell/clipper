@@ -1,4 +1,4 @@
-import type { ClipperAPI } from '../../preload/types'
+import type { ClipperAPI } from '../../../preload/types'
 
 declare global {
   interface Window {

@@ -4,13 +4,16 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: ['electron-store'] })],
+    // Everything is bundled into the main chunk. ffmpeg-static stays external
+    // only so its dev-time require() resolves the binary's real location; the
+    // packaged app reads ffmpeg.exe from resources/ instead (see utils.ts).
+    plugins: [externalizeDepsPlugin()],
     build: {
       lib: {
         entry: resolve('src/main/index.ts')
       },
       rollupOptions: {
-        external: ['ffmpeg-static', 'ffprobe-static']
+        external: ['ffmpeg-static']
       }
     }
   },

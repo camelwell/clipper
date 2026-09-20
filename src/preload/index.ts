@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, webUtils, IpcRendererEvent } from 'electron'
 import type { ClipperAPI, ExportOptions, ExportProgress } from './types'
 
 const api: ClipperAPI = {
@@ -16,11 +16,14 @@ const api: ClipperAPI = {
   // File system
   readDirectory: (dirPath: string) => ipcRenderer.invoke('fs:read-directory', dirPath),
   getHomeDirectory: () => ipcRenderer.invoke('fs:home-directory'),
+  // Electron 32+ no longer exposes File.path to the renderer; this is the
+  // sanctioned way to resolve a dropped File to its on-disk path.
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
 
   // FFmpeg
   probeVideo: (filePath: string) => ipcRenderer.invoke('ffmpeg:probe', filePath),
-  generateThumbnails: (filePath: string, count: number, height: number) =>
-    ipcRenderer.invoke('ffmpeg:thumbnails', filePath, count, height),
+  generateThumbnails: (filePath: string, duration: number, count: number, height: number) =>
+    ipcRenderer.invoke('ffmpeg:thumbnails', filePath, duration, count, height),
   exportTrimmed: (options: ExportOptions) => ipcRenderer.invoke('ffmpeg:export', options),
   cancelExport: () => ipcRenderer.invoke('ffmpeg:cancel-export'),
 

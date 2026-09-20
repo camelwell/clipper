@@ -11,14 +11,17 @@ interface VideoState {
   fps: number
   bitrate: number
   thumbnails: string[]
+  /** Seconds of video each thumbnail represents */
   thumbnailInterval: number
 
   loadVideo: (filePath: string) => Promise<void>
   clearVideo: () => void
-  setThumbnails: (thumbnails: string[], interval: number) => void
 }
 
-export const useVideoStore = create<VideoState>((set) => ({
+const THUMBNAIL_HEIGHT = 90
+const MAX_THUMBNAILS = 120
+
+export const useVideoStore = create<VideoState>((set, get) => ({
   filePath: null,
   fileName: null,
   fileSize: null,
@@ -31,6 +34,8 @@ export const useVideoStore = create<VideoState>((set) => ({
   thumbnails: [],
   thumbnailInterval: 0,
 
+  // Resolves as soon as the file is probed so the player and trim range are
+  // usable immediately; thumbnails fill the timeline in when they arrive.
   loadVideo: async (filePath: string) => {
     const metadata = await window.clipperAPI.probeVideo(filePath)
     const fileName = filePath.split(/[\\/]/).pop() ?? filePath
@@ -49,17 +54,19 @@ export const useVideoStore = create<VideoState>((set) => ({
       thumbnailInterval: 0
     })
 
-    // Generate thumbnails in background
-    const count = Math.min(Math.ceil(metadata.duration / 2), 120)
-    try {
-      const thumbnails = await window.clipperAPI.generateThumbnails(filePath, count, 90)
-      const interval = metadata.duration / count
-      set({ thumbnails, thumbnailInterval: interval })
-    } catch {
-      // Thumbnails are non-critical
-    }
+    const count = Math.max(1, Math.min(Math.ceil(metadata.duration / 2), MAX_THUMBNAILS))
+    window.clipperAPI
+      .generateThumbnails(filePath, metadata.duration, count, THUMBNAIL_HEIGHT)
+      .then((thumbnails) => {
+        // Drop results for a file that's no longer the open one
+        if (get().filePath === filePath) {
+          set({ thumbnails, thumbnailInterval: metadata.duration / count })
+        }
+      })
+      .catch(() => {
+        // Thumbnails are non-critical
+      })
 
-    // Add to recent files
     const dirPath = filePath.substring(0, filePath.lastIndexOf(filePath.includes('/') ? '/' : '\\'))
     window.clipperAPI.setLastDirectory(dirPath)
 
@@ -88,7 +95,5 @@ export const useVideoStore = create<VideoState>((set) => ({
     bitrate: 0,
     thumbnails: [],
     thumbnailInterval: 0
-  }),
-
-  setThumbnails: (thumbnails, interval) => set({ thumbnails, thumbnailInterval: interval })
+  })
 }))

@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useVideoStore } from '../stores/videoStore'
-import { usePlaybackStore } from '../stores/playbackStore'
-import { useTrimStore } from '../stores/trimStore'
 import { useUIStore } from '../stores/uiStore'
 import { useFileNavStore } from '../stores/fileNavStore'
+import { openVideoDialog, closeVideo } from '../utils/openVideo'
 import logoIcon from '../assets/clipper_logo.png'
 import '../styles/titlebar.css'
 
@@ -29,24 +28,14 @@ export default function TitleBar(): JSX.Element {
     return () => document.removeEventListener('mousedown', handler)
   }, [menuOpen])
 
-  const openFile = useCallback(async () => {
+  const openFile = useCallback(() => {
     setMenuOpen(null)
-    const path = await window.clipperAPI.openFileDialog()
-    if (path) {
-      await useVideoStore.getState().loadVideo(path)
-      useTrimStore.getState().resetTrim(useVideoStore.getState().duration)
-      usePlaybackStore.getState().setCurrentTime(0)
-      usePlaybackStore.getState().setIsPlaying(false)
-      useFileNavStore.getState().loadRecentFiles()
-    }
+    openVideoDialog()
   }, [])
 
   const newFile = useCallback(() => {
     setMenuOpen(null)
-    useVideoStore.getState().clearVideo()
-    useTrimStore.getState().resetTrim(0)
-    usePlaybackStore.getState().setCurrentTime(0)
-    usePlaybackStore.getState().setIsPlaying(false)
+    closeVideo()
   }, [])
 
   const exportFile = useCallback(() => {
