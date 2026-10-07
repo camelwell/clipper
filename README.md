@@ -1,6 +1,6 @@
 # clipper
 
-simple lightweight desktop app for trimming MP4 files
+simple lightweight desktop app for trimming MP4 files yo
 
 ![clipper](img/clipper_long.png)
 
